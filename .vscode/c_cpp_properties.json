@@ -1,0 +1,19 @@
+{
+    "configurations": [
+        {
+            "name": "dnslab",
+            "includePath": [
+                "${workspaceFolder}/src",
+                "${workspaceFolder}/src/**"
+            ],
+            "cStandard": "c17",
+            "intelliSenseMode": "clang-arm64",
+            "compilerArgs": [
+                "-Wall",
+                "-Wextra",
+                "-Wpedantic"
+            ]
+        }
+    ],
+    "version": 4
+}

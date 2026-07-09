@@ -1,0 +1,10 @@
+# compile_flags.txt — shared compiler flags for editor tooling (clangd, etc.)
+# Mirrors the Makefile's CPPFLAGS/CFLAGS so the language server sees the
+# same include paths / standard as `make build`. -Werror is intentionally
+# omitted here so the editor doesn't turn every half-typed line red;
+# warnings are still reported (just not promoted to errors).
+-Isrc
+-std=c17
+-Wall
+-Wextra
+-Wpedantic

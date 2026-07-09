@@ -8,13 +8,29 @@ DIST_DIR := dist
 
 CC ?= cc
 
-CPPFLAGS ?=
+# -I$(SRC_DIR): lets every .c include headers from the src/ root,
+# e.g. #include "dns.h" or #include "command/command.h" regardless of
+# which subdirectory the source file itself lives in.
+CPPFLAGS ?= -I$(SRC_DIR)
 CFLAGS ?= -std=c17 -Wall -Wextra -Wpedantic -Werror -O2 -g
 LDFLAGS ?=
 LDLIBS ?=
 
-SRCS := $(SRC_DIR)/main.c
-OBJS := $(OBJ_DIR)/main.o
+# Application sources (excluding the test binary).
+# Grouped by role so it is obvious where to add a new command.
+MAIN_SRC := $(SRC_DIR)/main.c
+CLI_SRC  := $(SRC_DIR)/cli.c
+LIB_SRC  := $(SRC_DIR)/engine/dns.c \
+            $(SRC_DIR)/decor/print.c \
+            $(SRC_DIR)/net/net.c
+CMD_SRC  := $(SRC_DIR)/command/compose.c \
+            $(SRC_DIR)/command/lookup.c \
+            $(SRC_DIR)/command/details.c \
+            $(SRC_DIR)/command/resolv.c
+
+SRCS := $(MAIN_SRC) $(CLI_SRC) $(LIB_SRC) $(CMD_SRC)
+# % matches across '/', so src/command/foo.c -> build/obj/command/foo.o
+OBJS := $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRCS))
 BIN := $(BIN_DIR)/$(APP)
 
 UNAME_S := $(shell uname -s)
@@ -49,7 +65,9 @@ build: $(BIN)
 $(BIN): $(OBJS) | $(BIN_DIR)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
+# Create the matching obj subdirectory (e.g. build/obj/command) on demand.
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+	@mkdir -p $(dir $@)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 $(BIN_DIR) $(OBJ_DIR) $(DIST_DIR):
@@ -58,15 +76,14 @@ $(BIN_DIR) $(OBJ_DIR) $(DIST_DIR):
 run: build
 	$(BIN)
 
-test: build
-	@output="$$( $(BIN) )"; \
-	expected="hello from dnslab"; \
-	if [ "$$output" = "$$expected" ]; then \
-		printf "ok: output matches: %s\n" "$$output"; \
-	else \
-		printf "fail: expected '%s', got '%s'\n" "$$expected" "$$output"; \
-		exit 1; \
-	fi
+TEST_BIN := $(BIN_DIR)/test_dns
+TEST_OBJS := $(OBJ_DIR)/test/test_dns.o $(OBJ_DIR)/engine/dns.o
+
+$(TEST_BIN): $(TEST_OBJS) | $(BIN_DIR)
+	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+test: $(TEST_BIN)
+	$(TEST_BIN)
 
 package: build | $(DIST_DIR)
 	tar -czf $(PACKAGE) -C $(BIN_DIR) $(APP)
