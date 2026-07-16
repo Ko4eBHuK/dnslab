@@ -2,15 +2,18 @@
  * lookup.c — implementation of cmd_lookup (default mode, no flag).
  *
  * Build query -> send over UDP to resolver (port 53) ->
- * receive response -> extract A record -> print IP(s).
+ * receive response -> extract A or AAAA record -> print IP(s).
  *
  * Two output modes:
  *   - Brief  (options.verbose == 0): IP addresses only, one per line.
  *   - Verbose (options.verbose != 0): server info, RCODE, answer summary.
+ *
+ * Query type is controlled by the --ipv6 flag (A vs AAAA).
  */
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <arpa/inet.h>
 
 #include "engine/dns.h"
 #include "decor/print.h"
@@ -18,9 +21,12 @@
 #include "command/command.h"
 
 int cmd_lookup(const char *domain, const cmd_options_t *options) {
+    uint16_t qtype = (options && options->qtype) ? options->qtype : DNS_TYPE_A;
+    const char *type_name = (qtype == DNS_TYPE_AAAA) ? "AAAA (IPv6)" : "A (IPv4)";
+
     /* ---- Build the query (silently, no compose output) ---- */
     uint8_t packet[DNS_MAX_PACKET];
-    int pkt_len = compose_request(domain, packet, sizeof(packet), 0);
+    int pkt_len = compose_request(domain, qtype, packet, sizeof(packet), 0);
     if (pkt_len < 0) {
         return 1;
     }
@@ -36,6 +42,7 @@ int cmd_lookup(const char *domain, const cmd_options_t *options) {
     if (verbose) {
         printf("=== DNS Resolve (verbose) ===\n");
         printf("Domain: %s\n", domain);
+        printf("Type:   %s\n", type_name);
         printf("Server: %s:53\n", server);
         printf("Timeout: %d ms, retries: %d\n\n", timeout, retries);
     }
@@ -92,31 +99,49 @@ int cmd_lookup(const char *domain, const cmd_options_t *options) {
         return 1;
     }
 
-    /* ---- Extract A records ---- */
-    int found_a = 0;
+    /* ---- Extract A / AAAA records ---- */
+    int found = 0;
     for (size_t i = 0; i < dns_resp.nanswers; i++) {
         const dns_answer_rr_t *rr = &dns_resp.answers[i];
-        if (rr->type == DNS_TYPE_A && rr->rdlength == 4) {
-            found_a = 1;
-            if (verbose) {
-                printf("Answer: A %u.%u.%u.%u  TTL=%u\n",
-                       rr->rdata[0], rr->rdata[1],
-                       rr->rdata[2], rr->rdata[3],
-                       rr->ttl);
-            } else {
-                printf("%u.%u.%u.%u\n",
-                       rr->rdata[0], rr->rdata[1],
-                       rr->rdata[2], rr->rdata[3]);
+
+        if (qtype == DNS_TYPE_AAAA) {
+            /* AAAA record: 16 bytes → IPv6 address string */
+            if (rr->type == DNS_TYPE_AAAA && rr->rdlength == 16) {
+                found = 1;
+                char ip6_str[INET6_ADDRSTRLEN];
+                if (inet_ntop(AF_INET6, rr->rdata, ip6_str, sizeof(ip6_str))) {
+                    if (verbose) {
+                        printf("Answer: AAAA %s  TTL=%u\n", ip6_str, rr->ttl);
+                    } else {
+                        printf("%s\n", ip6_str);
+                    }
+                }
+            }
+        } else {
+            /* A record: 4 bytes → IPv4 address string */
+            if (rr->type == DNS_TYPE_A && rr->rdlength == 4) {
+                found = 1;
+                if (verbose) {
+                    printf("Answer: A %u.%u.%u.%u  TTL=%u\n",
+                           rr->rdata[0], rr->rdata[1],
+                           rr->rdata[2], rr->rdata[3],
+                           rr->ttl);
+                } else {
+                    printf("%u.%u.%u.%u\n",
+                           rr->rdata[0], rr->rdata[1],
+                           rr->rdata[2], rr->rdata[3]);
+                }
             }
         }
     }
 
-    if (!found_a) {
+    if (!found) {
+        const char *rec_type = (qtype == DNS_TYPE_AAAA) ? "AAAA" : "A";
         if (verbose) {
-            printf("No A records in response\n");
+            printf("No %s records in response\n", rec_type);
             dns_print_response(&dns_resp);
         } else {
-            fprintf(stderr, "Error: no A records in response\n");
+            fprintf(stderr, "Error: no %s records in response\n", rec_type);
         }
         free(server);
         return 1;

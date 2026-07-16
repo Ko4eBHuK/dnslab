@@ -35,6 +35,7 @@ typedef struct {
     int         timeout_ms; /* --timeout <ms>, or 0 for default       */
     int         retries;    /* --retries <n>, or 0 for default        */
     int         verbose;    /* --verbose flag (1 = detailed output)    */
+    uint16_t    qtype;      /* DNS_TYPE_A (1) or DNS_TYPE_AAAA (28)   */
 } cmd_options_t;
 
 /* ---------- Commands ---------- */
@@ -49,11 +50,12 @@ typedef struct {
 int cmd_lookup(const char *domain, const cmd_options_t *options);
 
 /*
- * Build a DNS A-record query for <domain> and display it in three
- * visual representations (schema / binary / human-readable), plus a
- * hex dump and structured field breakdown. No network I/O.
+ * Build a DNS query for <domain> (A or AAAA depending on --ipv6 flag)
+ * and display it in three visual representations (schema / binary /
+ * human-readable), plus a hex dump and structured field breakdown.
+ * No network I/O.
  */
-int cmd_compose(const char *domain);
+int cmd_compose(const char *domain, uint16_t qtype);
 
 /*
  * Full flow with verbose output at every step: compose output plus a
@@ -66,13 +68,15 @@ int cmd_details(const char *domain, const cmd_options_t *options);
 /*
  * Build a DNS A-record query and optionally print the compose output.
  *   domain    — domain to query (e.g. "example.com")
+ *   qtype     — DNS_TYPE_A or DNS_TYPE_AAAA
  *   buf       — output buffer (at least DNS_MAX_PACKET bytes)
  *   cap       — buffer capacity
  *   print_all — if non-zero, print hex + structured + 3 schemes (as --compose-request)
  *
  * Returns the packet length, or -1 on error.
  */
-int compose_request(const char *domain, uint8_t *buf, size_t cap, int print_all);
+int compose_request(const char *domain, uint16_t qtype,
+                    uint8_t *buf, size_t cap, int print_all);
 
 /*
  * Resolve the DNS server address.

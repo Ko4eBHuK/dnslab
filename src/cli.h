@@ -33,6 +33,14 @@ typedef enum {
 } app_mode_t;
 
 /*
+ * Query type (A = IPv4 or AAAA = IPv6), selected by --ipv6 flag.
+ */
+typedef enum {
+    QTYPE_A    = 1,    /* DNS_TYPE_A    — IPv4 address */
+    QTYPE_AAAA = 28    /* DNS_TYPE_AAAA — IPv6 address */
+} app_qtype_t;
+
+/*
  * Run the CLI: parse argv and dispatch to the appropriate command.
  * Returns the command's exit code, or 1 for usage errors. Never
  * returns without having handled everything.

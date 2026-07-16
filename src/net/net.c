@@ -72,7 +72,7 @@ int dns_send_udp(const uint8_t *req, size_t req_len,
 
     struct addrinfo hints;
     memset(&hints, 0, sizeof hints);
-    hints.ai_family   = AF_INET;      /* IPv4 only for now */
+    hints.ai_family   = AF_UNSPEC;    /* IPv4 + IPv6 */
     hints.ai_socktype = SOCK_DGRAM;   /* UDP */
     hints.ai_flags    = 0;
     hints.ai_protocol = 0;

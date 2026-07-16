@@ -6,11 +6,12 @@
  *   2. Network step with server/attempt logging.
  *   3. Raw response hex dump + structured + schemes.
  *   4. Decode RCODE, flags, answer RRs.
- *   5. Summary: domain -> ip.
+ *   5. Summary: domain -> IP (A or AAAA depending on --ipv6).
  */
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <arpa/inet.h>
 
 #include "engine/dns.h"
 #include "decor/print.h"
@@ -18,6 +19,9 @@
 #include "command/command.h"
 
 int cmd_details(const char *domain, const cmd_options_t *options) {
+    uint16_t qtype = (options && options->qtype) ? options->qtype : DNS_TYPE_A;
+    const char *type_name = (qtype == DNS_TYPE_AAAA) ? "AAAA (IPv6)" : "A (IPv4)";
+
     const char *explicit_server = (options && options->server) ? options->server : NULL;
     char *server = dns_resolve_server(explicit_server);
 
@@ -26,12 +30,13 @@ int cmd_details(const char *domain, const cmd_options_t *options) {
 
     printf("=== DNS Full Details ===\n");
     printf("Domain: %s\n", domain);
+    printf("Type:   %s\n", type_name);
     printf("Server: %s:53\n", server);
     printf("Timeout: %d ms, retries: %d\n\n", timeout, retries);
 
     /* ---- Step 1: Compose the request ---- */
     uint8_t packet[DNS_MAX_PACKET];
-    int pkt_len = compose_request(domain, packet, sizeof(packet), 1);
+    int pkt_len = compose_request(domain, qtype, packet, sizeof(packet), 1);
     if (pkt_len < 0) {
         free(server);
         return 1;
@@ -113,24 +118,40 @@ int cmd_details(const char *domain, const cmd_options_t *options) {
     } else if (dns_resp.rcode != DNS_RCODE_NOERROR) {
         printf("  %s -> RCODE=%d (server error)\n", domain, dns_resp.rcode);
     } else {
-        int found_a = 0;
+        int found = 0;
         for (size_t i = 0; i < dns_resp.nanswers; i++) {
             const dns_answer_rr_t *rr = &dns_resp.answers[i];
-            if (rr->type == DNS_TYPE_A && rr->rdlength == 4) {
-                printf("  %s -> A %u.%u.%u.%u (TTL=%u)\n",
-                       domain,
-                       rr->rdata[0], rr->rdata[1],
-                       rr->rdata[2], rr->rdata[3],
-                       rr->ttl);
-                found_a = 1;
+
+            if (qtype == DNS_TYPE_AAAA) {
+                if (rr->type == DNS_TYPE_AAAA && rr->rdlength == 16) {
+                    found = 1;
+                    char ip6_str[INET6_ADDRSTRLEN];
+                    if (inet_ntop(AF_INET6, rr->rdata, ip6_str, sizeof(ip6_str))) {
+                        printf("  %s -> AAAA %s (TTL=%u)\n", domain, ip6_str, rr->ttl);
+                    }
+                }
+            } else {
+                if (rr->type == DNS_TYPE_A && rr->rdlength == 4) {
+                    found = 1;
+                    printf("  %s -> A %u.%u.%u.%u (TTL=%u)\n",
+                           domain,
+                           rr->rdata[0], rr->rdata[1],
+                           rr->rdata[2], rr->rdata[3],
+                           rr->ttl);
+                }
             }
         }
-        if (!found_a) {
-            printf("  %s -> no A records in response\n", domain);
+        if (!found) {
+            const char *rec_type = (qtype == DNS_TYPE_AAAA) ? "AAAA" : "A";
+            printf("  %s -> no %s records in response\n", domain, rec_type);
         }
     }
     printf("\n");
-    printf("Hint: compare with `dig +short %s A`\n", domain);
+    if (qtype == DNS_TYPE_AAAA) {
+        printf("Hint: compare with `dig +short %s AAAA`\n", domain);
+    } else {
+        printf("Hint: compare with `dig +short %s A`\n", domain);
+    }
 
     free(server);
     return 0;

@@ -30,6 +30,7 @@ typedef struct {
     int         timeout_ms; /* --timeout <ms> (0 = default)            */
     int         retries;    /* --retries <n> (0 = default)             */
     int         verbose;    /* --verbose / -v                          */
+    int         ipv6;       /* --ipv6 / -6  (1 = query AAAA instead of A) */
 } cli_args_t;
 
 /* ================================================================
@@ -55,6 +56,7 @@ static cli_args_t parse_args(int argc, char *argv[]) {
     args.timeout_ms = 0;
     args.retries    = 0;
     args.verbose    = 0;
+    args.ipv6       = 0;
 
     int mode_flags = 0;
     int domains    = 0;
@@ -110,6 +112,8 @@ static cli_args_t parse_args(int argc, char *argv[]) {
             }
         } else if (strcmp(tok, "--verbose") == 0 || strcmp(tok, "-v") == 0) {
             args.verbose = 1;
+        } else if (strcmp(tok, "--ipv6") == 0 || strcmp(tok, "-6") == 0) {
+            args.ipv6 = 1;
         } else if (tok[0] == '-' && tok[1] != '\0') {
             /* Unrecognized flag (e.g. "--foo", "-x"). Bare "-" is NOT
              * treated as a flag: it would be a weird domain, but we
@@ -163,6 +167,7 @@ static void print_usage(const char *prog) {
     printf("  --retries <n>       Number of retries on timeout (default: %d).\n",
            DNS_DEFAULT_RETRIES);
     printf("  --verbose, -v       Detailed output for lookup mode.\n");
+    printf("  --ipv6, -6          Query for AAAA (IPv6) records instead of A (IPv4).\n");
     printf("  -h, --help          Show this help message.\n\n");
     printf("Arguments:\n");
     printf("  <domain>            Domain name to query (e.g. example.com).\n\n");
@@ -173,6 +178,8 @@ static void print_usage(const char *prog) {
     printf("  %s --timeout 3000 --retries 1 example.com\n", prog);
     printf("  %s --compose-request example.com\n", prog);
     printf("  %s --details example.com\n", prog);
+    printf("  %s --ipv6 example.com\n", prog);
+    printf("  %s --ipv6 --verbose example.com\n", prog);
 }
 
 /* ================================================================
@@ -205,7 +212,7 @@ int cli_run(int argc, char *argv[]) {
                 print_usage(argv[0]);
                 return 1;
             }
-            return cmd_compose(args.domain);
+            return cmd_compose(args.domain, args.ipv6 ? QTYPE_AAAA : QTYPE_A);
 
         case MODE_DETAILS: {
             if (args.domain == NULL) {
@@ -218,6 +225,7 @@ int cli_run(int argc, char *argv[]) {
                 .timeout_ms = args.timeout_ms,
                 .retries   = args.retries,
                 .verbose   = args.verbose,
+                .qtype     = args.ipv6 ? QTYPE_AAAA : QTYPE_A,
             };
             return cmd_details(args.domain, &opts);
         }
@@ -233,6 +241,7 @@ int cli_run(int argc, char *argv[]) {
                 .timeout_ms = args.timeout_ms,
                 .retries   = args.retries,
                 .verbose   = args.verbose,
+                .qtype     = args.ipv6 ? QTYPE_AAAA : QTYPE_A,
             };
             return cmd_lookup(args.domain, &opts);
         }

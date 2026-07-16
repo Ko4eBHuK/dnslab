@@ -546,6 +546,13 @@ void dns_print_response(const dns_response_t *resp) {
                 printf("A %u.%u.%u.%u",
                        rr->rdata[0], rr->rdata[1],
                        rr->rdata[2], rr->rdata[3]);
+            } else if (rr->type == DNS_TYPE_AAAA && rr->rdlength == 16) {
+                char aaaa[INET6_ADDRSTRLEN];
+                if (inet_ntop(AF_INET6, rr->rdata, aaaa, sizeof(aaaa))) {
+                    printf("AAAA %s", aaaa);
+                } else {
+                    printf("AAAA <invalid>");
+                }
             } else {
                 printf("TYPE=%u RDATA=", rr->type);
                 for (int j = 0; j < rr->rdlength; j++) {

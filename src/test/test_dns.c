@@ -223,6 +223,81 @@ static void test_build_query_buffer_too_small(void) {
     PASS();
 }
 
+static void test_build_query_aaaa(void) {
+    TEST("build_query: \"example.com\" AAAA-record");
+
+    uint8_t buf[DNS_MAX_PACKET];
+    int len = dns_build_query(0x1234, "example.com",
+                              DNS_TYPE_AAAA, buf, sizeof(buf));
+
+    if (len != 29) {
+        FAIL("expected packet length 29");
+        return;
+    }
+
+    /* Check header fields */
+    /* ID = 0x1234 */
+    if (buf[0] != 0x12 || buf[1] != 0x34) {
+        FAIL("ID mismatch");
+        return;
+    }
+
+    /* Flags = 0x0100 (standard query, RD=1) */
+    if (buf[2] != 0x01 || buf[3] != 0x00) {
+        FAIL("Flags mismatch");
+        return;
+    }
+
+    /* QDCOUNT = 1 */
+    if (buf[4] != 0x00 || buf[5] != 0x01) {
+        FAIL("QDCOUNT mismatch");
+        return;
+    }
+
+    /* ANCOUNT = 0 */
+    if (buf[6] != 0x00 || buf[7] != 0x00) {
+        FAIL("ANCOUNT mismatch");
+        return;
+    }
+
+    /* NSCOUNT = 0 */
+    if (buf[8] != 0x00 || buf[9] != 0x00) {
+        FAIL("NSCOUNT mismatch");
+        return;
+    }
+
+    /* ARCOUNT = 0 */
+    if (buf[10] != 0x00 || buf[11] != 0x00) {
+        FAIL("ARCOUNT mismatch");
+        return;
+    }
+
+    /* Check domain name encoding: \x07example\x03com\x00 */
+    const uint8_t expected_name[] = {
+        0x07, 'e', 'x', 'a', 'm', 'p', 'l', 'e',
+        0x03, 'c', 'o', 'm',
+        0x00
+    };
+    if (memcmp(buf + 12, expected_name, sizeof(expected_name)) != 0) {
+        FAIL("domain encoding mismatch");
+        return;
+    }
+
+    /* QTYPE = 0x001c (AAAA) */
+    if (buf[25] != 0x00 || buf[26] != 0x1c) {
+        FAIL("QTYPE mismatch (expected 0x001c for AAAA)");
+        return;
+    }
+
+    /* QCLASS = 0x0001 (IN) */
+    if (buf[27] != 0x00 || buf[28] != 0x01) {
+        FAIL("QCLASS mismatch");
+        return;
+    }
+
+    PASS();
+}
+
 /* ================================================================
  * Main
  * ================================================================ */
@@ -240,6 +315,7 @@ int main(void) {
     /* dns_build_query tests */
     printf("--- dns_build_query ---\n");
     test_build_query_example_a();
+    test_build_query_aaaa();
     test_build_query_different_id();
     test_build_query_buffer_too_small();
     putchar('\n');
