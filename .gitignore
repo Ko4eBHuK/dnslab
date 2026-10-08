@@ -3,4 +3,7 @@
 *.o
 *.dSYM/
 .DS_Store
-dnslab_output
+
+# Editor / clangd caches
+.vscode/
+.cache/

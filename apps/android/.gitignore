@@ -1,0 +1,19 @@
+# IDE (Android Studio / IntelliJ)
+*.iml
+/.idea/
+
+# Gradle / Kotlin
+.gradle
+.kotlin
+/build
+
+# Native (NDK / CMake)
+.externalNativeBuild
+.cxx
+
+# Local machine settings (sdk.dir)
+local.properties
+
+# Misc
+/captures
+.DS_Store
