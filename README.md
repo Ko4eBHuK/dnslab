@@ -90,8 +90,13 @@ src/
 | DNSSEC | Yes | No | No |
 | EDNS0 | Yes | Yes | No |
 
-See [`comparison-dig-nslookup.md`](comparison-dig-nslookup.md) for a detailed
-comparison.
+See [`docs/comparison-dig-nslookup.md`](docs/comparison-dig-nslookup.md) for a
+detailed comparison.
+
+## Documentation
+
+Project notes, plans and specs live in [`docs/`](docs/README.md).
+Sample CLI output and app screenshots live in [`examples/`](examples/README.md).
 
 ## Build
 
