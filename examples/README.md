@@ -7,7 +7,7 @@ Android-приложения.
 
 | Файл | Команда | Что показывает |
 |------|---------|----------------|
-| [compose-request-bebra.shma.txt](cli/compose-request-bebra.shma.txt) | `dnslab --compose-request bebra.shma` | Сборка A-запроса без отправки в сеть: hex dump, разбор заголовка и секции Question, ASCII-схемы пакета (28 байт) |
+| [compose-request-shrek.com.txt](cli/compose-request-shrek.com.txt) | `dnslab --compose-request shrek.com` | Сборка A-запроса без отправки в сеть: hex dump, разбор заголовка и секции Question, ASCII-схемы пакета (27 байт = заголовок 12 + имя 11 + QTYPE/QCLASS 4) |
 
 ## Android (`android/`)
 
