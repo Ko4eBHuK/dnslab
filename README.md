@@ -4,9 +4,22 @@ An educational DNS tool for learning how DNS works "from the bottom up" —
 from constructing a raw binary query to sending it over UDP and parsing
 the response.
 
+## Repository Layout
+
+```
+dnslib/      C core library + dnslab CLI (Makefile, sources, build output)
+apps/        Consumer applications of the library
+  android/   Android app (Kotlin/Compose) calling the core via JNI
+docs/        Knowledge base: plans, specs, notes
+examples/    Sample CLI output and app screenshots
+```
+
 ## Quick Start
 
+All CLI commands below are run from the `dnslib/` directory:
+
 ```bash
+cd dnslib
 make
 ./build/bin/dnslab example.com           # A (IPv4) lookup
 ./build/bin/dnslab --ipv6 example.com    # AAAA (IPv6) lookup
@@ -57,10 +70,10 @@ make test                               # run unit tests
 ./build/bin/dnslab --timeout 2000 --retries 1 example.com
 ```
 
-## Project Structure
+## Library Structure
 
 ```
-src/
+dnslib/src/
 ├── main.c              Entry point
 ├── cli.c/h             Argument parsing & dispatch
 ├── engine/
@@ -99,6 +112,8 @@ Project notes, plans and specs live in [`docs/`](docs/README.md).
 Sample CLI output and app screenshots live in [`examples/`](examples/README.md).
 
 ## Build
+
+Run from `dnslib/` (or use `make -C dnslib <target>` from the repo root):
 
 ```bash
 make          # release build

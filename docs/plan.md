@@ -298,6 +298,7 @@ CLI-парсинг. Пока всегда stdout.
 ### Сборка
 
 ```sh
+cd dnslib
 make build     # собрать проект
 make run       # запустить
 make test      # запустить тесты
@@ -305,7 +306,7 @@ make test      # запустить тесты
 
 Архитектура исходников:
 ```
-src/
+dnslib/src/
   main.c                 # точка входа: return cli_run(argc, argv)
   cli.{c,h}              # state machine: parse argv + dispatch
   engine/dns.{c,h}       # core: кодирование имён, сборка пакета
