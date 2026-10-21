@@ -39,9 +39,9 @@ make test                               # run unit tests
 | Option | Description |
 |--------|-------------|
 | `--server <ip>` | DNS server address (default: auto-detect from `/etc/resolv.conf` or `8.8.8.8`) |
-| `--timeout <ms>` | Receive timeout per attempt (default: 5000) |
+| `--timeout <ms>` | Receive timeout per attempt (default: 2000) |
 | `--retries <n>` | Number of retries on timeout (default: 2) |
-| `--verbose, -v` | Detailed output for lookup mode |
+| `--verbose` | Detailed output for lookup mode |
 | `--ipv6, -6` | Query for AAAA (IPv6) records instead of A (IPv4) |
 | `-h, --help` | Show help message |
 

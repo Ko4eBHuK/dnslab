@@ -29,7 +29,7 @@ typedef struct {
     const char *server;     /* --server <ip> (NULL = auto-detect)     */
     int         timeout_ms; /* --timeout <ms> (0 = default)            */
     int         retries;    /* --retries <n> (0 = default)             */
-    int         verbose;    /* --verbose / -v                          */
+    int         verbose;    /* --verbose                               */
     int         ipv6;       /* --ipv6 / -6  (1 = query AAAA instead of A) */
 } cli_args_t;
 
@@ -110,7 +110,7 @@ static cli_args_t parse_args(int argc, char *argv[]) {
                 args.bad_token = tok;
                 return args;
             }
-        } else if (strcmp(tok, "--verbose") == 0 || strcmp(tok, "-v") == 0) {
+        } else if (strcmp(tok, "--verbose") == 0) {
             args.verbose = 1;
         } else if (strcmp(tok, "--ipv6") == 0 || strcmp(tok, "-6") == 0) {
             args.ipv6 = 1;
@@ -166,7 +166,7 @@ static void print_usage(const char *prog) {
            DNS_DEFAULT_TIMEOUT_MS);
     printf("  --retries <n>       Number of retries on timeout (default: %d).\n",
            DNS_DEFAULT_RETRIES);
-    printf("  --verbose, -v       Detailed output for lookup mode.\n");
+    printf("  --verbose           Detailed output for lookup mode.\n");
     printf("  --ipv6, -6          Query for AAAA (IPv6) records instead of A (IPv4).\n");
     printf("  -h, --help          Show this help message.\n\n");
     printf("Arguments:\n");

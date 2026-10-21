@@ -83,7 +83,7 @@ Usage: nslookup [-option] [name | -] [server]
 Usage: dnslab [FLAG] <domain>
 
 Modes:  (default) | --compose-request | --details
-Options: --server, --timeout, --retries, --verbose/-v, --ipv6/-6, -h/--help
+Options: --server, --timeout, --retries, --verbose, --ipv6/-6, -h/--help
 ```
 
 - **Три режима** работы: короткий (IP), компоновка (без сети), детальный (сеть + дамп)

@@ -285,7 +285,7 @@ int dns_parse_response(const uint8_t *buf, size_t len, dns_response_t *out);
 У команды **два режима вывода**:
 - **Краткий (без флага, по умолчанию)** — аналог `dig +short`: только IP-адреса,
   по одному на строку (по одному на каждую A-запись). Без шапки, без визуализации пакета.
-- **Подробный (`--verbose` / `-v`)** — человекочитаемая сводка: использованный сервер
+- **Подробный (`--verbose`)** — человекочитаемая сводка: использованный сервер
   и порт, число попыток (если были ретраи), код ответа (RCODE), список answer-записей
   в виде `name → A → ip → TTL`.
 
@@ -308,7 +308,7 @@ int dns_parse_response(const uint8_t *buf, size_t len, dns_response_t *out);
 - `--server <ip>` → передаётся в команду.
 - `--timeout <ms>` → `dns_send_udp`.
 - `--retries <n>` → `dns_send_udp`.
-- `--verbose` (`-v`) → переключает `cmd_lookup` в подробный режим (Шаг 6).
+- `--verbose` → переключает `cmd_lookup` в подробный режим (Шаг 6).
   Не конфликтует с `--details`: `--verbose` = сводка ответа (RCODE + answers + сервер),
   `--details` = полный дамп сырого пакета (hex + structured + 3 схемы, Шаг 7).
 - Без флага (`MODE_DEFAULT`) остаётся `cmd_lookup` в кратком режиме.
