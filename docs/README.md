@@ -9,7 +9,7 @@
 | 2 | [net-plan.md](net-plan.md) | Сетевой этап: UDP-транспорт, timeout/retry, сверка ID, парсер ответа, CLI-команды `lookup`/`details`, подводные камни | ✅ Шаги 1–8, 10 выполнены; шаг 9 (тесты парсера) открыт |
 | 3 | [comparison-dig-nslookup.md](comparison-dig-nslookup.md) | Сравнение `dnslab` с `dig` и `nslookup`: вывод, CLI, ошибки, уникальные возможности | ✅ Готово (2026-07-09) |
 | 4 | [android-tech-spec.md](android-tech-spec.md) | ТЗ на Android-приложение «DNS Resolver»: архитектура, UI, JNI-спецификация, модели данных, стек, roadmap, критерии приёмки | 📝 Черновик, roadmap не начат |
-| 5 | [jni-walkthrough.md](jni-walkthrough.md) | Пошаговый разбор вызова `dns_build_query()` из Kotlin через JNI: карта вызова, сборка CMake, грабли, превью следующих шагов | 🚧 Рабочая заметка, ещё не реализована |
+| 5 | [jni-walkthrough.md](jni-walkthrough.md) | Пошаговый разбор вызова `dns_build_query()` из Kotlin через JNI: карта вызова, сборка CMake, грабли, превью следующих шагов | ✅ Минимальный сценарий `buildQuery` реализован; в начале документа — таблица соответствия имён |
 
 ## Быстрые ссылки
 

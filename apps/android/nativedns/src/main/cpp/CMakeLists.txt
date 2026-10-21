@@ -9,7 +9,19 @@ cmake_minimum_required(VERSION 3.22.1)
 # Since this is the top level CMakeLists.txt, the project name is also accessible
 # with ${CMAKE_PROJECT_NAME} (both CMake variables are in-sync within the top level
 # build script scope).
-project("nativedns")
+project("nativedns" C)
+
+set(CMAKE_C_STANDARD 17)
+
+# dnslib: the C core shared with the CLI, built straight from the repo sources.
+# Path: cpp -> main -> src -> nativedns -> android -> apps -> repo root.
+set(DNSLIB_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../dnslib/src)
+
+add_library(dnslib STATIC
+    ${DNSLIB_SRC_DIR}/engine/dns.c)
+
+target_include_directories(dnslib PUBLIC ${DNSLIB_SRC_DIR})
+target_compile_options(dnslib PRIVATE -Wall -Wextra -Wpedantic)
 
 # Creates and names a library, sets it as either STATIC
 # or SHARED, and provides the relative paths to its source code.
@@ -26,12 +38,13 @@ project("nativedns")
 # used in the AndroidManifest.xml file.
 add_library(${CMAKE_PROJECT_NAME} SHARED
     # List C/C++ source files with relative paths to this CMakeLists.txt.
-    nativedns.cpp)
+    ../c/nativedns.c)
 
 # Specifies libraries CMake should link to your target library. You
 # can link libraries from various origins, such as libraries defined in this
 # build script, prebuilt third-party libraries, or Android system libraries.
 target_link_libraries(${CMAKE_PROJECT_NAME}
     # List libraries link to the target library
+    dnslib
     android
     log)

@@ -5,6 +5,17 @@
 > и как при этом соблюдается принцип **«ядро простое и не знает о
 > потребителях»**. Код C НЕ меняем — только описываем будущую интеграцию.
 
+> **Статус: реализовано (минимальный вариант).** Фактические имена в проекте:
+>
+> | В примерах ниже | В коде |
+> |---|---|
+> | `com.dnslab.app.data.bridge.DnsNativeBridge` | `dnslab.nativedns.DnsNativeBridge` (модуль `apps/android/nativedns`) |
+> | `System.loadLibrary("dnslab")` | `System.loadLibrary("nativedns")` |
+> | `app/src/main/cpp/dnslab_jni.c` | `apps/android/nativedns/src/main/c/nativedns.c` |
+> | `dnslab/engine/dns.c` | `dnslib/src/engine/dns.c` (подключается из репозитория, без копирования) |
+> | `structuredView(bytes): String` | `DnsQueryPacket.parse(bytes)` → data-класс (см. Шаг K3) |
+> | `DnsRepository`, `ViewModel`, `DnsBuildException` | пока не заведены: экран зовёт мост напрямую, при ошибке приходит `null` |
+
 ---
 
 ## 0. Почему именно `dns_build_query()`
@@ -166,6 +177,10 @@ enum class DnsRecordType(val code: Int, val label: String) {
 `code` здесь — это ровно те `DNS_TYPE_A`/`DNS_TYPE_AAAA` из `engine/dns.h`.
 Числовые константы на двух сторонах должны совпадать — это единственный
 «контракт» между языками.
+
+Значения не придуманы проектом: это стандартные коды QTYPE из реестра IANA
+«DNS Resource Record (RR) TYPEs». `A = 1` задан в RFC 1035 §3.2.2,
+`AAAA = 28` — в RFC 3596 §2.1. Их понимает любой DNS-сервер.
 
 ### Шаг K1. Объявление `external`-функции
 
@@ -359,6 +374,15 @@ class DnsRepositoryImpl(private val bridge: DnsNativeBridge) : DnsRepository {
 
 ### Шаг K3. Потребитель: чистый Kotlin-рендеринг
 
+> **Как сделано в коде.** Структурированный вид — не строка, а модель:
+> `DnsQueryPacket.parse(bytes)` разбирает `ByteArray` в data-классы
+> `DnsQueryPacket` → `DnsHeader` (ID, flags и вычисляемые QR/OPCODE/AA/TC/RD/RA/RCODE,
+> счётчики) + `DnsQuestion` (name, qtype, qclass). Модель живёт в
+> `apps/android/app/.../model/` и дальше используется для вывода (экран
+> форматирует её в текст) и для любых других функций (схемы, сравнение,
+> подсветка полей). `hexDump(bytes)` остался чистой функцией в `render/`.
+> Код ниже — исходный набросок, оставлен для истории.
+
 Здесь реализуются три представления из FR-02 как **чистые функции от
 `ByteArray`**. Это и есть «универсальная логика потребителя», отделённая
 от ядра. Приведу `hexDump` целиком (он короткий) и наметки остальных:
@@ -500,6 +524,30 @@ PacketViewScreen(bytes, HEX)
 ## 5. Сборка и проводка (что понадобится в Android-проекте)
 
 ### 5.1 `CMakeLists.txt` под NDK
+
+> **Как сделано в коде** (`apps/android/nativedns/src/main/cpp/CMakeLists.txt`):
+> ядро собирается отдельной статической библиотекой `dnslib` прямо из
+> `dnslib/src/`, а JNI-библиотека `nativedns` линкуется с ней:
+>
+> ```cmake
+> set(DNSLIB_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../dnslib/src)
+> add_library(dnslib STATIC ${DNSLIB_SRC_DIR}/engine/dns.c)
+> target_include_directories(dnslib PUBLIC ${DNSLIB_SRC_DIR})
+>
+> add_library(nativedns SHARED ../c/nativedns.c)
+> target_link_libraries(nativedns dnslib android log)
+> ```
+>
+> **Почему файлы перечислены явно, а не «всё скопом».** Библиотека как единый
+> артефакт — это цель `dnslib` (`STATIC`), а не список файлов: потребитель
+> линкуется с одной целью и получает include-пути через `PUBLIC`.
+> Сам список исходников внутри цели в CMake принято писать явно:
+> `file(GLOB ...)` не замечает новые файлы без повторного configure, и
+> нельзя исключить ненужное. Здесь это важно: `main.c`, `cli.c`, `command/*`
+> и `decor/print.c` (печать в stdout) — это CLI, Android их не берёт.
+> Следующим шагом можно вынести список в `dnslib/CMakeLists.txt` и
+> подключать через `add_subdirectory` — тогда и CLI, и Android будут
+> брать один и тот же список.
 
 Для пути `buildQuery` нам нужен **только** `engine/dns.c` + мост. Ни
 `decor/print.c`, ни `command/*.c`, ни `main.c` не требуются — подчёркнуто
